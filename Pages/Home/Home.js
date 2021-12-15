@@ -5,6 +5,7 @@ import {
   TextInput,
   TouchableOpacity,
   FlatList,
+  Pressable,
 } from "react-native";
 import {
   getDatabase,
@@ -13,42 +14,45 @@ import {
   set,
   push,
   update,
+  child,
 } from "firebase/database";
 import { AntDesign } from "@expo/vector-icons";
 import { Ionicons } from "@expo/vector-icons";
+import { confirmPasswordReset } from "firebase/auth";
 
 const Home = (props) => {
   const [newToDo, setNewToDo] = useState("");
-  const [toDos, setToDos] = useState({ id: "", todo: "" });
+  const [toDos, setToDos] = useState([]);
 
   const db = getDatabase();
   const toDoListRef = ref(db, "toDoList/" + props.userId);
-  // const UpdateToDoRef = ref(db, "toDos/" + );
+  //
   const newToDoRef = push(toDoListRef);
 
   const onAdd = () => {
     set(newToDoRef, {
+      id: newToDoRef.key,
       todo: newToDo,
     }).catch((err) => console.log(err));
     setNewToDo("");
   };
 
-  const updateData = () => {
-    update(UpdateToDoRef, {
-      text: toDo,
-    });
-    props.navigation.navigate("Add");
-  };
+  //const todokey = push(child(ref(db), "toDos/")).key;
+  //console.log("This is the todokey ==> ", todokey);
 
   useEffect(() => {
     onValue(toDoListRef, (snapshot) => {
-      const data = snapshot.val();
-      let result = Object.keys(data).map((key) => {
-        return { ...data[key], id: key };
-      });
+      if (snapshot.val() !== null) {
+        const data = snapshot.val();
+        let result = Object.keys(data).map((key) => {
+          return { ...data[key], id: key };
+        });
 
-      console.log("result from split ===>", result);
-      setToDos(result);
+        console.log("result from split ===>", result);
+        setToDos(result);
+      } else {
+        setToDos([]);
+      }
     });
   }, []);
 
@@ -56,6 +60,48 @@ const Home = (props) => {
     props.userAuth.signOut();
     props.navigation.navigate("Auth");
   };
+
+  const TaskItem = ({ item }) => {
+    const [toggleEdit, setToggleEdit] = useState(false);
+    const [changeToDo, setChangeToDo] = useState("");
+
+    const handleEdit = (todo, id) => {
+      if (toggleEdit) {
+        if (changeToDo !== "") {
+          updateData(changeToDo, id);
+
+          setToggleEdit(!toggleEdit);
+        }
+      } else {
+        setChangeToDo(todo);
+
+        setToggleEdit(!toggleEdit);
+      }
+    };
+
+    const updateData = (toDo, id) => {
+      const UpdateToDoRef = ref(db, "toDos/" + id);
+
+      update(UpdateToDoRef, {
+        toDo: toDo,
+      });
+      //props.navigation.navigate("Add");
+    };
+
+    return (
+      <View style={{ flexDirection: "row" }}>
+        {toggleEdit ? (
+          <TextInput value={changeToDo} onChangeText={setChangeToDo} />
+        ) : (
+          <Text>{item.todo}</Text>
+        )}
+        <Pressable onPress={() => handleEdit(item.todo, item.id)}>
+          <Text>{toggleEdit ? "✅" : "🖋️"}</Text>
+        </Pressable>
+      </View>
+    );
+  };
+
   return (
     <View>
       <TouchableOpacity onPress={() => props.navigation.navigate("Profile")}>
@@ -78,11 +124,7 @@ const Home = (props) => {
         <View>
           <FlatList
             data={toDos}
-            renderItem={({ item, index }) => (
-              <Text key={index}>
-                {item.todo} {item.id}
-              </Text>
-            )}
+            renderItem={({ item }) => <TaskItem item={item} />}
           />
         </View>
       </View>
