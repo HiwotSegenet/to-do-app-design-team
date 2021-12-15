@@ -6,16 +6,24 @@ import {
   TouchableOpacity,
   FlatList,
 } from "react-native";
-import { getDatabase, ref, onValue, set, push } from "firebase/database";
+import {
+  getDatabase,
+  ref,
+  onValue,
+  set,
+  push,
+  update,
+} from "firebase/database";
 import { AntDesign } from "@expo/vector-icons";
 import { Ionicons } from "@expo/vector-icons";
 
 const Home = (props) => {
   const [newToDo, setNewToDo] = useState("");
-  const [toDos, setToDos] = useState([]);
+  const [toDos, setToDos] = useState({ id: "", todo: "" });
 
   const db = getDatabase();
   const toDoListRef = ref(db, "toDoList/" + props.userId);
+  // const UpdateToDoRef = ref(db, "toDos/" + );
   const newToDoRef = push(toDoListRef);
 
   const onAdd = () => {
@@ -25,14 +33,24 @@ const Home = (props) => {
     setNewToDo("");
   };
 
+  const updateData = () => {
+    update(UpdateToDoRef, {
+      text: toDo,
+    });
+    props.navigation.navigate("Add");
+  };
+
   useEffect(() => {
     onValue(toDoListRef, (snapshot) => {
       const data = snapshot.val();
-      let result = Object.keys(data).map((key) => data[key]);
+      let result = Object.keys(data).map((key) => {
+        return { ...data[key], id: key };
+      });
+
+      console.log("result from split ===>", result);
       setToDos(result);
     });
   }, []);
-  console.log(toDos);
 
   const signout = () => {
     props.userAuth.signOut();
@@ -61,9 +79,10 @@ const Home = (props) => {
           <FlatList
             data={toDos}
             renderItem={({ item, index }) => (
-              <Text key={index}>{item.todo}</Text>
+              <Text key={index}>
+                {item.todo} {item.id}
+              </Text>
             )}
-            // keyExtractor={(item) => posts.indexOf(item)}
           />
         </View>
       </View>
