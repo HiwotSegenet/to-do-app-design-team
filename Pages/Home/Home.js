@@ -80,10 +80,10 @@ const Home = (props) => {
     };
 
     const updateData = (toDo, id) => {
-      const UpdateToDoRef = ref(db, "toDos/" + id);
+      const UpdateToDoRef = ref(db, "toDoList/" + props.userId + "/" + id);
 
       update(UpdateToDoRef, {
-        toDo: toDo,
+        todo: toDo,
       });
       //props.navigation.navigate("Add");
     };
