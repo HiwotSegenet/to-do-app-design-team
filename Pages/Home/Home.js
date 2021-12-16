@@ -26,8 +26,9 @@ const Home = (props) => {
 
   const db = getDatabase();
   const toDoListRef = ref(db, "toDoList/" + props.userId);
-  //
+  //go to this userId
   const newToDoRef = push(toDoListRef);
+  //add new to do to end of toDoListRef
 
   const onAdd = () => {
     set(newToDoRef, {
@@ -36,9 +37,8 @@ const Home = (props) => {
     }).catch((err) => console.log(err));
     setNewToDo("");
   };
-
-  //const todokey = push(child(ref(db), "toDos/")).key;
-  //console.log("This is the todokey ==> ", todokey);
+  //newToDoRef.key gives us the key for that specific to do
+  //.catch catches any errors
 
   useEffect(() => {
     onValue(toDoListRef, (snapshot) => {
@@ -47,23 +47,27 @@ const Home = (props) => {
         let result = Object.keys(data).map((key) => {
           return { ...data[key], id: key };
         });
-
-        console.log("result from split ===>", result);
         setToDos(result);
       } else {
         setToDos([]);
       }
     });
   }, []);
+  //Object.keys gets the data out in a way that it can be rendered
+  // if else prevents error from null
 
   const signout = () => {
     props.userAuth.signOut();
     props.navigation.navigate("Auth");
   };
+  //signOut is firebase
+  // navigation.navigate("Page") - what page to go to in nav stack
 
   const TaskItem = ({ item }) => {
     const [toggleEdit, setToggleEdit] = useState(false);
     const [changeToDo, setChangeToDo] = useState("");
+    //curly braces when object - item is flat list
+    // passing in props item - deconstructed
 
     const handleEdit = (todo, id) => {
       if (toggleEdit) {
@@ -78,6 +82,7 @@ const Home = (props) => {
         setToggleEdit(!toggleEdit);
       }
     };
+    //handling toggle of editing. Passing in new todo + id of task we want to target
 
     const updateData = (toDo, id) => {
       const UpdateToDoRef = ref(db, "toDoList/" + props.userId + "/" + id);
@@ -85,8 +90,10 @@ const Home = (props) => {
       update(UpdateToDoRef, {
         todo: toDo,
       });
-      //props.navigation.navigate("Add");
     };
+    //updating of data in db. id = specific task id we're ref
+    // forward slash to create path when connecting one generated key to another
+    // update point to this part and update todo
 
     return (
       <View style={{ flexDirection: "row" }}>
@@ -125,6 +132,7 @@ const Home = (props) => {
           <FlatList
             data={toDos}
             renderItem={({ item }) => <TaskItem item={item} />}
+            //For each item inside todos put it inside TaskItem as a prop
           />
         </View>
       </View>
